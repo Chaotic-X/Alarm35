@@ -7,8 +7,16 @@
 //
 
 import Foundation
+import UserNotifications
 
-class AlarmController {
+//MARK: -Protocols
+protocol AlarmScheduler: class {
+//  func sechscheduleUserNotifications(for alarm: Alarm)
+//  func cancelUserNotifications(for alarm: Alarm)
+}
+
+//MARK: -Class
+class AlarmController: AlarmScheduler {
   
   //MARK: -Shared Instance
   static let sharedInstance = AlarmController()
@@ -25,6 +33,11 @@ class AlarmController {
   
   func toggleIsOn(for alarm: Alarm) {
     alarm.alarmSwitch.toggle()
+    if alarm.alarmSwitch {
+      scheduleUserNotifications(for: alarm)
+    } else {
+      cancelUserNotifications(for: alarm)
+    }
   }
   
   //MARK: CRUD
@@ -34,21 +47,25 @@ class AlarmController {
 //    mockAlarms.append(newMockAlarm)
     let newAlarm = Alarm(alarmName: alarmName, alarmTime: alarmTime, alarmSwitch: alarmSwitch)
     alarms.append(newAlarm)
+    scheduleUserNotifications(for: newAlarm)
     saveToPersistentStore()
   }
   //Read
   
   //Update
   func updateAlarm(alarmToUpdate: Alarm, nameToUpdate: String, timeToUpdate: Date, switchUpdate: Bool ) {
+    cancelUserNotifications(for: alarmToUpdate)
     alarmToUpdate.alarmName = nameToUpdate
     alarmToUpdate.alarmTime = timeToUpdate
     alarmToUpdate.alarmSwitch = switchUpdate
+    scheduleUserNotifications(for: alarmToUpdate)
     saveToPersistentStore()
   }
   
   //Delete
   func deleteAlarm(alarmToDelete: Alarm) {
     guard let index = alarms.firstIndex(of: alarmToDelete) else { return }
+    self.cancelUserNotifications(for: alarmToDelete)
     alarms.remove(at: index)
 //    mockAlarms.remove(at: index)
     saveToPersistentStore()
@@ -87,3 +104,26 @@ class AlarmController {
     }
   }//End of Load
 } //End of Class
+
+//MARK: -Extensions
+extension AlarmScheduler {
+  func scheduleUserNotifications(for alarm: Alarm) {
+    let content = UNMutableNotificationContent()
+    content.title = "Yo! Your Alarm there buddy!"
+    content.subtitle = "You Gonna do sometin about dis?"
+    content.badge = 1
+    content.sound = UNNotificationSound.default
+    
+    let dateComponents = Calendar.current.dateComponents([.hour, .minute], from: alarm.alarmTime)
+    let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+    let request = UNNotificationRequest(identifier: alarm.uuid, content: content, trigger: trigger)
+    UNUserNotificationCenter.current().add(request) { (error) in
+      if let error = error {
+        print("Due to an error we could not schedule your local user notification, please try again later: \(error.localizedDescription)")
+      }
+    }
+  }
+  func cancelUserNotifications(for alarm: Alarm) {
+    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarm.uuid])
+  }
+}

@@ -20,6 +20,7 @@ class AlarmDetailTableViewController: UITableViewController {
     didSet{
         loadViewIfNeeded()
         self.updateView()
+      
     }
   }
   
@@ -27,6 +28,7 @@ class AlarmDetailTableViewController: UITableViewController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
+  setUpEnableButton()
     
   }
   

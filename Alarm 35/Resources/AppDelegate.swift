@@ -10,26 +10,24 @@ import UIKit
 import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
   
   
   
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
-    let center = UNUserNotificationCenter.current()
-    center.getNotificationSettings { settings in
-      guard (settings.authorizationStatus == .authorized) ||
-            (settings.authorizationStatus == .provisional) else { return }
-      if settings.alertSetting == .enabled {
-        // Schedule an alert-only notification.
-
-      } else {
-        // Schedule a notification with a badge and sound.
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { (accepted, error) in
+      if !accepted {
+        print("Notification access has been denied")
       }
     }
+    UNUserNotificationCenter.current().delegate = self
     return true
   }
   
+  func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    completionHandler([.alert, .sound])
+  }
   // MARK: UISceneSession Lifecycle
   
   func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
